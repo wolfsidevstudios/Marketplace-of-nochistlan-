@@ -25,6 +25,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
         const { error: resendError } = await supabase.auth.resend({
             type: 'signup',
             email: email,
+            options: {
+                emailRedirectTo: 'https://marketplacepofnochistlan.netlify.app/',
+            },
         });
         if (resendError) {
             setError(resendError.message);
@@ -46,6 +49,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
                 email,
                 password,
                 options: {
+                    emailRedirectTo: 'https://marketplacepofnochistlan.netlify.app/',
                     data: {
                         name,
                         location,

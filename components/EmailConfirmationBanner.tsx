@@ -18,7 +18,10 @@ const EmailConfirmationBanner: React.FC = () => {
         setMessage('');
         const { error } = await supabase.auth.resend({
             type: 'signup',
-            email: session.user.email
+            email: session.user.email,
+            options: {
+                emailRedirectTo: 'https://marketplacepofnochistlan.netlify.app/',
+            },
         });
 
         if (error) {
