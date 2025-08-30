@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Item } from '../types';
 
@@ -15,13 +14,13 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
             role="button"
             tabIndex={0}
             onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onItemClick(item)}
-            aria-label={`View details for ${item.description}`}
+            aria-label={`Ver detalles de ${item.description}`}
         >
             {item.mediaUrls.length > 0 && (
                  <img src={item.mediaUrls[0].url} alt={item.description} className="w-full h-48 object-cover" />
             )}
             <div className="p-4">
-                <p className="text-xl font-bold text-gray-800">${item.price.toLocaleString('en-US')}</p>
+                <p className="text-xl font-bold text-gray-800">${item.price.toLocaleString('es-MX')}</p>
                 <p className="mt-2 text-gray-600 truncate group-hover:text-blue-600 transition-colors">{item.description}</p>
                 <div className="mt-4 pt-4 border-t border-gray-200">
                     <p className="text-sm text-gray-500 flex items-center">
@@ -35,7 +34,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
                     {item.acceptsDigitalPayment && (
                          <div className="mt-2 inline-flex items-center bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
                             <CreditCardIcon className="w-4 h-4 mr-1" />
-                            Accepts Digital Payment
+                            Acepta Pagos Digitales
                         </div>
                     )}
                 </div>

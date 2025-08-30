@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Item } from '../types';
 import Button from './common/Button';
@@ -38,7 +37,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
                     <button 
                         onClick={onClose} 
                         className="absolute top-0 -left-2 md:top-4 md:-left-4 z-20 p-2 rounded-full bg-white/70 backdrop-blur-sm shadow-md hover:bg-gray-100 transition"
-                        aria-label="Back to feed"
+                        aria-label="Volver al inicio"
                     >
                         <ArrowLeftIcon className="w-6 h-6 text-gray-700" />
                     </button>
@@ -51,7 +50,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
                                     {activeImageUrl ? (
                                         <img src={activeImageUrl} alt={item.description} className="w-full h-full object-cover" />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-gray-500">No Image</div>
+                                        <div className="w-full h-full flex items-center justify-center text-gray-500">Sin Imagen</div>
                                     )}
                                 </div>
                                 {item.mediaUrls.length > 1 && (
@@ -67,18 +66,18 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
 
                             {/* Item Details */}
                             <div className="mt-8 md:mt-0 flex flex-col">
-                                <p className="text-4xl md:text-5xl font-extrabold text-gray-900">${item.price.toLocaleString('en-US')}</p>
+                                <p className="text-4xl md:text-5xl font-extrabold text-gray-900">${item.price.toLocaleString('es-MX')}</p>
                                 <p className="mt-4 text-gray-700 text-lg whitespace-pre-wrap">{item.description}</p>
                                 
                                 {item.acceptsDigitalPayment && (
                                     <div className="mt-4 inline-flex items-center bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full w-fit">
                                         <CreditCardIcon className="w-5 h-5 mr-1.5" />
-                                        Accepts Digital Payment
+                                        Acepta Pagos Digitales
                                     </div>
                                 )}
 
                                 <div className="mt-8 pt-6 border-t">
-                                    <h3 className="text-lg font-semibold text-gray-800">Seller Information</h3>
+                                    <h3 className="text-lg font-semibold text-gray-800">Información del Vendedor</h3>
                                     <p className="text-gray-600 mt-2 flex items-center"><UserIcon className="w-5 h-5 mr-2 text-gray-500" /> {item.userName}</p>
                                     <p className="text-gray-600 mt-1 flex items-center"><LocationMarkerIcon className="w-5 h-5 mr-2 text-gray-500" /> {item.userLocation}</p>
                                 </div>
@@ -90,10 +89,10 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
                     <div className="absolute bottom-0 left-0 right-0 md:static md:mt-auto md:pt-8 bg-white/80 backdrop-blur-sm border-t border-gray-200 p-4 md:p-0 md:border-none">
                         <div className="flex flex-col sm:flex-row gap-4">
                             <Button onClick={handleCall} className="w-full" disabled={!item.contactInfo}>
-                                <PhoneIcon className="w-5 h-5 mr-2"/> Call Seller
+                                <PhoneIcon className="w-5 h-5 mr-2"/> Llamar al Vendedor
                             </Button>
                             <Button onClick={handleMessage} variant="secondary" className="w-full" disabled={!item.contactInfo}>
-                                <MessageIcon className="w-5 h-5 mr-2"/> Message Seller
+                                <MessageIcon className="w-5 h-5 mr-2"/> Enviar Mensaje
                             </Button>
                         </div>
                     </div>

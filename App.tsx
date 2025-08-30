@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Header from './components/Header';
@@ -11,18 +10,28 @@ import { Item } from './types';
 import { supabase } from './services/supabaseService';
 import Button from './components/common/Button';
 import EmailConfirmationBanner from './components/EmailConfirmationBanner';
+import WelcomePopup from './components/WelcomePopup';
 
 
 const AppContent: React.FC = () => {
     const { session, user } = useAuth();
     const [isAuthModalOpen, setAuthModalOpen] = useState(false);
     const [isPostModalOpen, setPostModalOpen] = useState(false);
+    const [isWelcomeModalOpen, setWelcomeModalOpen] = useState(false);
     const [items, setItems] = useState<Item[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedItem, setSelectedItem] = useState<Item | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const searchTimeoutRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        const hasVisited = localStorage.getItem('hasVisitedMarketplace');
+        if (!hasVisited) {
+            setWelcomeModalOpen(true);
+            localStorage.setItem('hasVisitedMarketplace', 'true');
+        }
+    }, []);
 
     const fetchItems = async () => {
         setLoading(true);
@@ -41,11 +50,11 @@ const AppContent: React.FC = () => {
 
         if (dbError) {
             console.error("Error fetching items:", dbError);
-            let errorMessage = "Could not fetch items. Please check your connection and try again.";
+            let errorMessage = "No se pudieron cargar los artículos. Por favor, revisa tu conexión e inténtalo de nuevo.";
             if (dbError.message.includes('relation "public.items" does not exist')) {
-                errorMessage = "The 'items' table was not found. Please ensure you have run the database migrations in your Supabase project.";
+                errorMessage = "No se encontró la tabla 'items'. Por favor, asegúrate de haber ejecutado las migraciones de la base de datos en tu proyecto de Supabase.";
             } else if (dbError.message.includes("violates row-level security policy")) {
-                errorMessage = "Could not fetch items due to security policies. Please check your Supabase Row Level Security (RLS) policies for the 'items' table and ensure 'SELECT' access is enabled for users or anonymous roles.";
+                errorMessage = "No se pudieron cargar los artículos debido a políticas de seguridad. Por favor, revisa las políticas de Seguridad a Nivel de Fila (RLS) de Supabase para la tabla 'items' y asegúrate de que el acceso 'SELECT' esté habilitado para usuarios o roles anónimos.";
             }
             setError(errorMessage);
         } else {
@@ -97,10 +106,10 @@ const AppContent: React.FC = () => {
             <main className="container mx-auto px-4 py-8">
                  {error ? (
                     <div className="text-center py-10 px-4 bg-red-50 border border-red-200 rounded-lg max-w-2xl mx-auto">
-                        <h2 className="text-xl font-semibold text-red-700">Oops! Something went wrong.</h2>
+                        <h2 className="text-xl font-semibold text-red-700">¡Ups! Algo salió mal.</h2>
                         <p className="mt-2 text-red-600">{error}</p>
                         <Button onClick={fetchItems} className="mt-6">
-                            Try Again
+                            Intentar de Nuevo
                         </Button>
                     </div>
                 ) : (
@@ -108,14 +117,20 @@ const AppContent: React.FC = () => {
                 )}
             </main>
 
+            {isWelcomeModalOpen && (
+                <Modal title="¡Bienvenido!" onClose={() => setWelcomeModalOpen(false)}>
+                    <WelcomePopup onClose={() => setWelcomeModalOpen(false)} />
+                </Modal>
+            )}
+
             {isAuthModalOpen && !session && (
-                <Modal title="Join or Sign In" onClose={() => setAuthModalOpen(false)}>
+                <Modal title="Únete o Inicia Sesión" onClose={() => setAuthModalOpen(false)}>
                     <AuthForm onAuthSuccess={() => setAuthModalOpen(false)} />
                 </Modal>
             )}
 
             {isPostModalOpen && session && (
-                <Modal title="Post a New Item" onClose={() => setPostModalOpen(false)}>
+                <Modal title="Publicar un Nuevo Artículo" onClose={() => setPostModalOpen(false)}>
                     <PostItemForm onPostSuccess={handlePostSuccess} />
                 </Modal>
             )}

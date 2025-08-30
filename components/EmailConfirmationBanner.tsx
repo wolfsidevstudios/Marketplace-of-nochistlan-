@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { supabase } from '../services/supabaseService';
 import { useAuth } from '../contexts/AuthContext';
@@ -27,7 +26,7 @@ const EmailConfirmationBanner: React.FC = () => {
         if (error) {
             setMessage(`Error: ${error.message}`);
         } else {
-            setMessage('A new confirmation link has been sent to your email.');
+            setMessage('Se ha enviado un nuevo enlace de confirmación a tu correo.');
         }
         setLoading(false);
     };
@@ -37,8 +36,8 @@ const EmailConfirmationBanner: React.FC = () => {
             <div className="container mx-auto px-4 py-3">
                 <div className="flex items-center justify-between gap-4">
                     <div>
-                        <p className="font-bold text-yellow-800">Please Confirm Your Email</p>
-                        <p className="text-sm text-yellow-700">Check your inbox for a confirmation link to unlock all features.</p>
+                        <p className="font-bold text-yellow-800">Por Favor Confirma Tu Correo</p>
+                        <p className="text-sm text-yellow-700">Revisa tu bandeja de entrada para ver el enlace de confirmación y desbloquear todas las funciones.</p>
                         {message && <p className="mt-1 text-sm font-medium text-yellow-800">{message}</p>}
                     </div>
                     <button
@@ -46,7 +45,7 @@ const EmailConfirmationBanner: React.FC = () => {
                         disabled={loading}
                         className="flex-shrink-0 text-sm font-semibold text-yellow-800 underline hover:text-yellow-900 disabled:opacity-50 disabled:no-underline"
                     >
-                        {loading ? 'Sending...' : 'Resend link'}
+                        {loading ? 'Enviando...' : 'Reenviar enlace'}
                     </button>
                 </div>
             </div>

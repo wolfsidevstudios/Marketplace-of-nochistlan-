@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { supabase } from '../services/supabaseService';
 import Button from './common/Button';
@@ -32,7 +31,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
         if (resendError) {
             setError(resendError.message);
         } else {
-            setError("A new confirmation link has been sent to your email.");
+            setError("Se ha enviado un nuevo enlace de confirmación a tu correo.");
             setShowResend(false);
         }
         setLoading(false);
@@ -70,7 +69,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
             const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
             if (signInError) {
                 if (signInError.message.toLowerCase().includes("email not confirmed")) {
-                    setError("Your email is not confirmed. Please check your inbox for the confirmation link.");
+                    setError("Tu correo no está confirmado. Por favor, revisa tu bandeja de entrada para ver el enlace de confirmación.");
                     setShowResend(true);
                 } else {
                     setError(signInError.message);
@@ -85,9 +84,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
     if (requiresConfirmation) {
         return (
             <div className="text-center p-4">
-                <h3 className="text-xl font-semibold text-green-700">Check your inbox!</h3>
+                <h3 className="text-xl font-semibold text-green-700">¡Revisa tu correo!</h3>
                 <p className="mt-2 text-gray-600">
-                    We've sent a confirmation link to <strong className="font-medium">{email}</strong>. Please click the link to complete your registration.
+                    Hemos enviado un enlace de confirmación a <strong className="font-medium">{email}</strong>. Por favor, haz clic en el enlace para completar tu registro.
                 </p>
             </div>
         );
@@ -103,7 +102,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
                         onClick={handleResendConfirmation}
                         className="font-medium text-sm text-blue-600 hover:text-blue-500"
                     >
-                        Resend Confirmation Email
+                        Reenviar Correo de Confirmación
                     </button>
                 </div>
             )}
@@ -111,7 +110,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
             {isSignUp && (
                  <Input
                     type="text"
-                    placeholder="Your Full Name"
+                    placeholder="Tu Nombre Completo"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
@@ -119,14 +118,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
             )}
             <Input
                 type="email"
-                placeholder="Your Email"
+                placeholder="Tu Correo Electrónico"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
             />
             <Input
                 type="password"
-                placeholder="Secure Password"
+                placeholder="Contraseña Segura"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -135,17 +134,17 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
             {isSignUp && (
                 <Input
                     type="text"
-                    placeholder="Your Location (e.g., Centro)"
+                    placeholder="Tu Ubicación (ej. Centro)"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     required
                 />
             )}
             <Button type="submit" disabled={loading} className="w-full">
-                {loading ? (isSignUp ? 'Signing Up...' : 'Signing In...') : (isSignUp ? 'Sign Up' : 'Sign In')}
+                {loading ? (isSignUp ? 'Registrando...' : 'Iniciando sesión...') : (isSignUp ? 'Registrarse' : 'Iniciar Sesión')}
             </Button>
             <p className="text-center text-sm text-gray-600">
-                {isSignUp ? "Already have an account?" : "Don't have an account?"}{' '}
+                {isSignUp ? "¿Ya tienes una cuenta?" : "¿No tienes una cuenta?"}{' '}
                 <button
                     type="button"
                     onClick={() => {
@@ -155,7 +154,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
                     }}
                     className="font-medium text-blue-600 hover:text-blue-500"
                 >
-                    {isSignUp ? 'Sign In' : 'Sign Up'}
+                    {isSignUp ? 'Iniciar Sesión' : 'Registrarse'}
                 </button>
             </p>
         </form>

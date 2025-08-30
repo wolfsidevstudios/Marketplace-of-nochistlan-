@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { supabase } from '../services/supabaseService';
 import { useAuth } from '../contexts/AuthContext';
@@ -37,7 +36,7 @@ const PostItemForm: React.FC<PostItemFormProps> = ({ onPostSuccess }) => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) {
-            setError("You must be logged in to post an item.");
+            setError("Debes iniciar sesión para publicar un artículo.");
             return;
         }
         setLoading(true);
@@ -50,7 +49,7 @@ const PostItemForm: React.FC<PostItemFormProps> = ({ onPostSuccess }) => {
             const { error: uploadError } = await supabase.storage.from('item-media').upload(filePath, file);
 
             if (uploadError) {
-                setError(`Failed to upload ${file.name}: ${uploadError.message}`);
+                setError(`Error al subir ${file.name}: ${uploadError.message}`);
                 setLoading(false);
                 return;
             }
@@ -84,7 +83,7 @@ const PostItemForm: React.FC<PostItemFormProps> = ({ onPostSuccess }) => {
             .select();
 
         if (insertError || !data) {
-            setError(insertError?.message || "Failed to post item.");
+            setError(insertError?.message || "Error al publicar el artículo.");
         } else {
             onPostSuccess(data[0]);
         }
@@ -95,16 +94,16 @@ const PostItemForm: React.FC<PostItemFormProps> = ({ onPostSuccess }) => {
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             {error && <p className="text-red-500 text-sm">{error}</p>}
-            <Input type="number" placeholder="Price (MXN)" value={price} onChange={e => setPrice(e.target.value)} required step="0.01" />
+            <Input type="number" placeholder="Precio (MXN)" value={price} onChange={e => setPrice(e.target.value)} required step="0.01" />
             <textarea
-                placeholder="Item Description"
+                placeholder="Descripción del Artículo"
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 required
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
                 rows={4}
             />
-            <Input type="text" placeholder="Contact Info (Phone, WhatsApp, etc.)" value={contactInfo} onChange={e => setContactInfo(e.target.value)} required />
+            <Input type="text" placeholder="Información de Contacto (Teléfono, WhatsApp, etc.)" value={contactInfo} onChange={e => setContactInfo(e.target.value)} required />
             
              <div className="flex items-center">
                 <input
@@ -115,12 +114,12 @@ const PostItemForm: React.FC<PostItemFormProps> = ({ onPostSuccess }) => {
                     className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <label htmlFor="digitalPayment" className="ml-2 block text-sm text-gray-900">
-                    Accept Digital Payments (Card, Transfer)
+                    Acepto Pagos Digitales (Tarjeta, Transferencia)
                 </label>
             </div>
             
             <div>
-                 <label className="block text-sm font-medium text-gray-700 mb-1">Images or Videos</label>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">Imágenes o Videos</label>
                  <input type="file" multiple onChange={handleFileChange} accept="image/*,video/*" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
             </div>
 
@@ -133,7 +132,7 @@ const PostItemForm: React.FC<PostItemFormProps> = ({ onPostSuccess }) => {
             )}
             
             <Button type="submit" disabled={loading} className="w-full">
-                {loading ? 'Posting...' : 'Post Item'}
+                {loading ? 'Publicando...' : 'Publicar Artículo'}
             </Button>
         </form>
     );

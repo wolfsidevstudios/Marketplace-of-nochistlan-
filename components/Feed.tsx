@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Item } from '../types';
 import ItemCard from './ItemCard';
@@ -29,8 +28,8 @@ const Feed: React.FC<FeedProps> = ({ items, loading, onItemClick }) => {
     
     if (items.length === 0) {
         return <div className="text-center py-16 text-gray-500">
-            <h2 className="text-2xl font-semibold">No items posted yet.</h2>
-            <p className="mt-2">Be the first to post something for sale!</p>
+            <h2 className="text-2xl font-semibold">Aún no hay artículos publicados.</h2>
+            <p className="mt-2">¡Sé el primero en publicar algo en venta!</p>
         </div>
     }
 

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabaseService';
@@ -33,7 +32,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onPostItemClick, onSearch
             <nav className="container mx-auto px-4 py-3 flex justify-between items-center gap-4">
                 <div className="flex-shrink-0">
                     {user ? (
-                         <span className="text-gray-700 hidden sm:inline">Welcome, <span className="font-semibold">{user.name}!</span></span>
+                         <span className="text-gray-700 hidden sm:inline">¡Bienvenido, <span className="font-semibold">{user.name}!</span></span>
                     ) : <div className="w-24"></div>}
                 </div>
                 
@@ -44,7 +43,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onPostItemClick, onSearch
                         </span>
                         <input
                             type="search"
-                            placeholder="Search for items..."
+                            placeholder="Buscar artículos..."
                             value={localSearchTerm}
                             onChange={handleSearchChange}
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-sky-300 focus:border-transparent transition-shadow duration-200 outline-none"
@@ -58,18 +57,18 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onPostItemClick, onSearch
                             <Button 
                                 onClick={onPostItemClick}
                                 disabled={!user.isConfirmed}
-                                title={!user.isConfirmed ? "Please confirm your email to post items" : "Post a new item"}
+                                title={!user.isConfirmed ? "Por favor, confirma tu correo para publicar artículos" : "Publicar un nuevo artículo"}
                             >
                                 <PlusIcon className="w-5 h-5 mr-0 sm:mr-2" />
-                                <span className="hidden sm:inline">Post Item</span>
+                                <span className="hidden sm:inline">Publicar</span>
                             </Button>
                             <Button onClick={handleLogout} variant="secondary">
-                                Log Out
+                                Cerrar Sesión
                             </Button>
                         </>
                     ) : (
                         <Button onClick={onLoginClick}>
-                            Login / Sign Up
+                            Iniciar Sesión / Registrarse
                         </Button>
                     )}
                 </div>
