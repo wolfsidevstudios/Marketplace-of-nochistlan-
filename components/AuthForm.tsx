@@ -16,14 +16,33 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
     const [location, setLocation] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [requiresConfirmation, setRequiresConfirmation] = useState(false);
+    const [showResend, setShowResend] = useState(false);
+
+    const handleResendConfirmation = async () => {
+        setLoading(true);
+        setError(null);
+        const { error: resendError } = await supabase.auth.resend({
+            type: 'signup',
+            email: email,
+        });
+        if (resendError) {
+            setError(resendError.message);
+        } else {
+            setError("A new confirmation link has been sent to your email.");
+            setShowResend(false);
+        }
+        setLoading(false);
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setShowResend(false);
 
         if (isSignUp) {
-            const { error: signUpError } = await supabase.auth.signUp({
+            const { data, error: signUpError } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
@@ -37,13 +56,21 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
             if (signUpError) {
                 setError(signUpError.message);
             } else {
-                // onAuthStateChange will handle the session update
-                onAuthSuccess();
+                if (data.user && !data.session) {
+                    setRequiresConfirmation(true);
+                } else {
+                    onAuthSuccess();
+                }
             }
         } else {
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) {
-                setError(error.message);
+            const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+            if (signInError) {
+                if (signInError.message.toLowerCase().includes("email not confirmed")) {
+                    setError("Your email is not confirmed. Please check your inbox for the confirmation link.");
+                    setShowResend(true);
+                } else {
+                    setError(signInError.message);
+                }
             } else {
                 onAuthSuccess();
             }
@@ -51,9 +78,31 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
         setLoading(false);
     };
 
+    if (requiresConfirmation) {
+        return (
+            <div className="text-center p-4">
+                <h3 className="text-xl font-semibold text-green-700">Check your inbox!</h3>
+                <p className="mt-2 text-gray-600">
+                    We've sent a confirmation link to <strong className="font-medium">{email}</strong>. Please click the link to complete your registration.
+                </p>
+            </div>
+        );
+    }
+
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+             {showResend && !loading && (
+                <div className="text-center">
+                    <button
+                        type="button"
+                        onClick={handleResendConfirmation}
+                        className="font-medium text-sm text-blue-600 hover:text-blue-500"
+                    >
+                        Resend Confirmation Email
+                    </button>
+                </div>
+            )}
             
             {isSignUp && (
                  <Input
@@ -95,7 +144,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
                 {isSignUp ? "Already have an account?" : "Don't have an account?"}{' '}
                 <button
                     type="button"
-                    onClick={() => setIsSignUp(!isSignUp)}
+                    onClick={() => {
+                        setIsSignUp(!isSignUp);
+                        setError(null);
+                        setShowResend(false);
+                    }}
                     className="font-medium text-blue-600 hover:text-blue-500"
                 >
                     {isSignUp ? 'Sign In' : 'Sign Up'}

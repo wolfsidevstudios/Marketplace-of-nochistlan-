@@ -2,9 +2,11 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { supabase } from '../services/supabaseService';
 import { Session, User } from '../types';
+import { Session as SupabaseSession } from '@supabase/supabase-js';
+
 
 interface AuthContextType {
-    session: Session | null;
+    session: SupabaseSession | null;
     user: User | null;
     loading: boolean;
 }
@@ -16,7 +18,7 @@ export const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [session, setSession] = useState<Session | null>(null);
+    const [session, setSession] = useState<SupabaseSession | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -29,6 +31,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     createdAt: session.user.created_at,
                     name: session.user.user_metadata?.name || session.user.email,
                     location: session.user.user_metadata?.location || '',
+                    isConfirmed: !!session.user.email_confirmed_at,
                 };
                 setUser(appUser);
             } else {

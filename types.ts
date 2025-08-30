@@ -4,6 +4,7 @@ export interface User {
     name: string;
     location: string;
     createdAt: string;
+    isConfirmed: boolean;
 }
 
 export interface Session {

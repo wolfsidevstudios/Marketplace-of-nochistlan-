@@ -10,10 +10,11 @@ import ItemDetail from './components/ItemDetail';
 import { Item } from './types';
 import { supabase } from './services/supabaseService';
 import Button from './components/common/Button';
+import EmailConfirmationBanner from './components/EmailConfirmationBanner';
 
 
 const AppContent: React.FC = () => {
-    const { session } = useAuth();
+    const { session, user } = useAuth();
     const [isAuthModalOpen, setAuthModalOpen] = useState(false);
     const [isPostModalOpen, setPostModalOpen] = useState(false);
     const [items, setItems] = useState<Item[]>([]);
@@ -67,6 +68,14 @@ const AppContent: React.FC = () => {
         }
         setPostModalOpen(false);
     };
+    
+    const handlePostItemClick = () => {
+        if (user?.isConfirmed) {
+            setPostModalOpen(true);
+        }
+        // If user is not confirmed, the button in Header will be disabled,
+        // so this function won't be called. No extra logic needed here.
+    };
 
     const handleSearch = (query: string) => {
         if (searchTimeoutRef.current) {
@@ -81,9 +90,10 @@ const AppContent: React.FC = () => {
         <div className="min-h-screen bg-white font-sans">
             <Header 
                 onLoginClick={() => setAuthModalOpen(true)} 
-                onPostItemClick={() => setPostModalOpen(true)}
+                onPostItemClick={handlePostItemClick}
                 onSearch={handleSearch}
             />
+            <EmailConfirmationBanner />
             <main className="container mx-auto px-4 py-8">
                  {error ? (
                     <div className="text-center py-10 px-4 bg-red-50 border border-red-200 rounded-lg max-w-2xl mx-auto">
