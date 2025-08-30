@@ -32,6 +32,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     name: session.user.user_metadata?.name || session.user.email,
                     location: session.user.user_metadata?.location || '',
                     isConfirmed: !!session.user.email_confirmed_at,
+                    isVerified: session.user.user_metadata?.isVerified || false,
                 };
                 setUser(appUser);
             } else {

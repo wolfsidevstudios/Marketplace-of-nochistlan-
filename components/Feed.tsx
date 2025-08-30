@@ -1,11 +1,11 @@
 import React from 'react';
-import { Item } from '../types';
+import { Post } from '../types';
 import ItemCard from './ItemCard';
 
 interface FeedProps {
-    items: Item[];
+    items: Post[];
     loading: boolean;
-    onItemClick: (item: Item) => void;
+    onItemClick: (item: Post) => void;
 }
 
 const Feed: React.FC<FeedProps> = ({ items, loading, onItemClick }) => {
@@ -28,8 +28,8 @@ const Feed: React.FC<FeedProps> = ({ items, loading, onItemClick }) => {
     
     if (items.length === 0) {
         return <div className="text-center py-16 text-gray-500">
-            <h2 className="text-2xl font-semibold">Aún no hay artículos publicados.</h2>
-            <p className="mt-2">¡Sé el primero en publicar algo en venta!</p>
+            <h2 className="text-2xl font-semibold">Aún no hay publicaciones.</h2>
+            <p className="mt-2">¡Sé el primero en publicar algo!</p>
         </div>
     }
 

@@ -6,16 +6,18 @@ import Button from './common/Button';
 import Input from './common/Input';
 import { Post } from '../types';
 
-interface PostItemFormProps {
-    onPostSuccess: (newItem: Post) => void;
+interface PostRentalFormProps {
+    onPostSuccess: (newPost: Post) => void;
 }
 
-const PostItemForm: React.FC<PostItemFormProps> = ({ onPostSuccess }) => {
+const PostRentalForm: React.FC<PostRentalFormProps> = ({ onPostSuccess }) => {
     const { user } = useAuth();
-    const [price, setPrice] = useState('');
+    const [rentalPrice, setRentalPrice] = useState('');
+    const [propertyType, setPropertyType] = useState<'Casa' | 'Departamento' | 'Cuarto'>('Casa');
+    const [bedrooms, setBedrooms] = useState('');
+    const [bathrooms, setBathrooms] = useState('');
     const [description, setDescription] = useState('');
     const [contactInfo, setContactInfo] = useState('');
-    const [acceptsDigitalPayment, setAcceptsDigitalPayment] = useState(false);
     const [files, setFiles] = useState<File[]>([]);
     const [previews, setPreviews] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
@@ -25,25 +27,18 @@ const PostItemForm: React.FC<PostItemFormProps> = ({ onPostSuccess }) => {
         if (e.target.files) {
             const selectedFiles = Array.from(e.target.files);
             setFiles(selectedFiles);
-
-            // Revoke old previews to free memory
             previews.forEach(url => URL.revokeObjectURL(url));
-
             const newPreviews = selectedFiles.map(file => URL.createObjectURL(file));
             setPreviews(newPreviews);
         }
     };
-    
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user) {
-            setError("Debes iniciar sesión para publicar un artículo.");
-            return;
-        }
+        if (!user) return;
         setLoading(true);
         setError(null);
-        
-        // 1. Upload files to Supabase Storage
+
         const uploadedMediaUrls: { url: string, type: 'image' | 'video' }[] = [];
         for (const file of files) {
             const filePath = `${user.id}/${Date.now()}-${file.name}`;
@@ -57,20 +52,18 @@ const PostItemForm: React.FC<PostItemFormProps> = ({ onPostSuccess }) => {
 
             const { data: urlData } = supabase.storage.from('item-media').getPublicUrl(filePath);
             if (urlData.publicUrl) {
-                uploadedMediaUrls.push({
-                    url: urlData.publicUrl,
-                    type: file.type.startsWith('image/') ? 'image' : 'video'
-                });
+                uploadedMediaUrls.push({ url: urlData.publicUrl, type: file.type.startsWith('image/') ? 'image' : 'video' });
             }
         }
-        
-        // 2. Insert item data into the database
-        const newItemData = {
-            postType: 'item',
-            price: parseFloat(price),
+
+        const newPostData = {
+            postType: 'rental',
+            rentalPrice: parseFloat(rentalPrice),
+            propertyType,
+            bedrooms: parseInt(bedrooms, 10) || undefined,
+            bathrooms: parseInt(bathrooms, 10) || undefined,
             description,
             contactInfo,
-            acceptsDigitalPayment,
             mediaUrls: uploadedMediaUrls,
             userId: user.id,
             userName: user.name,
@@ -79,46 +72,37 @@ const PostItemForm: React.FC<PostItemFormProps> = ({ onPostSuccess }) => {
             createdAt: new Date().toISOString(),
         };
 
-        const { data, error: insertError } = await supabase
-            .from('items')
-            .insert([newItemData])
-            .select();
+        const { data, error: insertError } = await supabase.from('items').insert([newPostData]).select();
 
         if (insertError || !data) {
-            setError(insertError?.message || "Error al publicar el artículo.");
+            setError(insertError?.message || "Error al publicar la propiedad.");
         } else {
             onPostSuccess(data[0]);
         }
-
         setLoading(false);
     };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             {error && <p className="text-red-500 text-sm">{error}</p>}
-            <Input type="number" placeholder="Precio (MXN)" value={price} onChange={e => setPrice(e.target.value)} required step="0.01" />
-            <textarea
-                placeholder="Descripción del Artículo"
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                required
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-transparent transition"
-                rows={4}
-            />
-            <Input type="text" placeholder="Información de Contacto (Teléfono, WhatsApp, etc.)" value={contactInfo} onChange={e => setContactInfo(e.target.value)} required />
-            
-             <div className="flex items-center">
-                <input
-                    id="digitalPayment"
-                    type="checkbox"
-                    checked={acceptsDigitalPayment}
-                    onChange={e => setAcceptsDigitalPayment(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="digitalPayment" className="ml-2 block text-sm text-gray-900">
-                    Acepto Pagos Digitales (Tarjeta, Transferencia)
-                </label>
+            <Input type="number" placeholder="Precio de Renta (MXN por mes)" value={rentalPrice} onChange={e => setRentalPrice(e.target.value)} required step="0.01" />
+
+            <div>
+                <label htmlFor="propertyType" className="block text-sm font-medium text-gray-700">Tipo de Propiedad</label>
+                <select id="propertyType" value={propertyType} onChange={e => setPropertyType(e.target.value as any)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm rounded-md">
+                    <option>Casa</option>
+                    <option>Departamento</option>
+                    <option>Cuarto</option>
+                </select>
             </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+                <Input type="number" placeholder="Recámaras" value={bedrooms} onChange={e => setBedrooms(e.target.value)} />
+                <Input type="number" placeholder="Baños" value={bathrooms} onChange={e => setBathrooms(e.target.value)} />
+            </div>
+
+            <textarea placeholder="Descripción de la Propiedad" value={description} onChange={e => setDescription(e.target.value)} required className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-transparent transition" rows={4} />
+            <Input type="text" placeholder="Información de Contacto" value={contactInfo} onChange={e => setContactInfo(e.target.value)} required />
             
             <div>
                  <label className="block text-sm font-medium text-gray-700 mb-1">Imágenes o Videos</label>
@@ -127,17 +111,15 @@ const PostItemForm: React.FC<PostItemFormProps> = ({ onPostSuccess }) => {
 
             {previews.length > 0 && (
                 <div className="grid grid-cols-3 gap-2">
-                    {previews.map((src, index) => (
-                        <img key={index} src={src} alt="preview" className="rounded-lg object-cover h-24 w-full" />
-                    ))}
+                    {previews.map((src, index) => <img key={index} src={src} alt="preview" className="rounded-lg object-cover h-24 w-full" />)}
                 </div>
             )}
             
             <Button type="submit" disabled={loading} className="w-full">
-                {loading ? 'Publicando...' : 'Publicar Artículo'}
+                {loading ? 'Publicando...' : 'Publicar Propiedad'}
             </Button>
         </form>
     );
 };
 
-export default PostItemForm;
+export default PostRentalForm;

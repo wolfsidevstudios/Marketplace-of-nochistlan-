@@ -5,6 +5,7 @@ export interface User {
     location: string;
     createdAt: string;
     isConfirmed: boolean;
+    isVerified?: boolean;
 }
 
 export interface Session {
@@ -12,18 +13,36 @@ export interface Session {
     token: string;
 }
 
-export interface Item {
-    id: string;
+export type PostType = 'item' | 'job' | 'rental';
+export type PostTypeFilter = PostType | null;
 
-    price: number;
+export interface Post {
+    id: string;
+    postType: PostType;
     description: string;
     contactInfo: string;
-    acceptsDigitalPayment: boolean;
     mediaUrls: { url: string; type: 'image' | 'video' }[];
     userId: string;
     userName: string;
     userLocation: string;
     createdAt: string;
+    userIsVerified?: boolean;
+
+    // Item-specific
+    price?: number;
+    acceptsDigitalPayment?: boolean;
+
+    // Job-specific
+    jobTitle?: string;
+    salary?: string;
+    jobType?: 'Tiempo Completo' | 'Medio Tiempo' | 'Contrato' | 'Temporal';
+    
+    // Rental-specific
+    rentalPrice?: number;
+    propertyType?: 'Casa' | 'Departamento' | 'Cuarto';
+    bedrooms?: number;
+    bathrooms?: number;
 }
+
 
 export type AuthChangeEvent = 'SIGNED_IN' | 'SIGNED_OUT';

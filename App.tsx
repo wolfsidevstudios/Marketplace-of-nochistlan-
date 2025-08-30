@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Header from './components/Header';
 import Feed from './components/Feed';
@@ -6,27 +7,35 @@ import Modal from './components/common/Modal';
 import AuthForm from './components/AuthForm';
 import PostItemForm from './components/PostItemForm';
 import ItemDetail from './components/ItemDetail';
-import { Item } from './types';
+import { Post, PostType, PostTypeFilter } from './types';
 import { supabase } from './services/supabaseService';
 import Button from './components/common/Button';
 import EmailConfirmationBanner from './components/EmailConfirmationBanner';
 import WelcomePopup from './components/WelcomePopup';
 import BottomNavBar from './components/BottomNavBar';
 import ProfileModal from './components/ProfileModal';
+import CreateOptionsModal from './components/CreateOptionsModal';
+import PostJobForm from './components/PostJobForm';
+import PostRentalForm from './components/PostRentalForm';
+import VerificationModal from './components/VerificationModal';
 
 
 const AppContent: React.FC = () => {
     const { session, user } = useAuth();
     const [isAuthModalOpen, setAuthModalOpen] = useState(false);
-    const [isPostModalOpen, setPostModalOpen] = useState(false);
+    const [isCreateOptionsModalOpen, setCreateOptionsModalOpen] = useState(false);
+    const [isPostItemModalOpen, setPostItemModalOpen] = useState(false);
+    const [isPostJobModalOpen, setPostJobModalOpen] = useState(false);
+    const [isPostRentalModalOpen, setPostRentalModalOpen] = useState(false);
     const [isWelcomeModalOpen, setWelcomeModalOpen] = useState(false);
     const [isProfileModalOpen, setProfileModalOpen] = useState(false);
-    const [items, setItems] = useState<Item[]>([]);
+    const [isVerificationModalOpen, setVerificationModalOpen] = useState(false);
+    const [items, setItems] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+    const [selectedItem, setSelectedItem] = useState<Post | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const searchTimeoutRef = useRef<number | null>(null);
+    const [filter, setFilter] = useState<PostTypeFilter>(null);
 
     useEffect(() => {
         const hasVisited = localStorage.getItem('hasVisitedMarketplace');
@@ -41,12 +50,16 @@ const AppContent: React.FC = () => {
         setError(null);
         
         let query = supabase
-            .from('items')
+            .from('items') // The table is still named 'items' in Supabase for now
             .select('*')
             .order('createdAt', { ascending: false });
 
         if (searchTerm) {
-            query = query.ilike('description', `%${searchTerm}%`);
+            query = query.or(`description.ilike.%${searchTerm}%,jobTitle.ilike.%${searchTerm}%`);
+        }
+
+        if (filter) {
+            query = query.eq('postType', filter);
         }
 
         const { data: fetchedItems, error: dbError } = await query;
@@ -68,36 +81,36 @@ const AppContent: React.FC = () => {
 
     useEffect(() => {
         fetchItems();
-    }, [searchTerm]);
+    }, [searchTerm, filter]);
 
-    const handlePostSuccess = (newItem: Item) => {
-        // If there's a search term, we refetch to ensure consistency,
-        // otherwise, we can just prepend the new item for a faster UI update.
-        if (searchTerm) {
+    const handlePostSuccess = (newItem: Post) => {
+        setPostItemModalOpen(false);
+        setPostJobModalOpen(false);
+        setPostRentalModalOpen(false);
+        if (searchTerm || filter) {
             fetchItems();
         } else {
             setItems(prevItems => [newItem, ...prevItems]);
         }
-        setPostModalOpen(false);
     };
     
-    const handlePostItemClick = () => {
+    const handleCrearClick = () => {
         if (user?.isConfirmed) {
-            setPostModalOpen(true);
+            setCreateOptionsModalOpen(true);
         } else if (!user) {
             setAuthModalOpen(true);
         }
-        // If user is not confirmed, the button in Header will be disabled,
-        // so this function won't be called. No extra logic needed here.
+    };
+    
+    const openPostForm = (type: PostType) => {
+        setCreateOptionsModalOpen(false);
+        if (type === 'item') setPostItemModalOpen(true);
+        if (type === 'job') setPostJobModalOpen(true);
+        if (type === 'rental') setPostRentalModalOpen(true);
     };
 
     const handleSearch = (query: string) => {
-        if (searchTimeoutRef.current) {
-            clearTimeout(searchTimeoutRef.current);
-        }
-        searchTimeoutRef.current = window.setTimeout(() => {
-            setSearchTerm(query);
-        }, 300); // 300ms debounce
+        setSearchTerm(query);
     };
 
     const handleProfileClick = () => {
@@ -107,16 +120,25 @@ const AppContent: React.FC = () => {
             setAuthModalOpen(true);
         }
     };
+    
+    const handleVerificationSuccess = () => {
+        setVerificationModalOpen(false);
+        // The AuthContext will automatically update the user state,
+        // triggering a re-render with the new verified status.
+    };
 
     return (
-        <div className="min-h-screen bg-white font-sans">
+        <div className="min-h-screen bg-gray-50 font-sans">
             <Header 
                 onLoginClick={() => setAuthModalOpen(true)} 
-                onPostItemClick={handlePostItemClick}
+                onPostItemClick={handleCrearClick}
                 onSearch={handleSearch}
+                activeFilter={filter}
+                onFilterChange={setFilter}
             />
             <EmailConfirmationBanner />
             <main className="container mx-auto px-4 py-8 pb-24 md:pb-8">
+                 <h2 className="text-2xl font-bold text-gray-800 mb-6">Publicado Recientemente</h2>
                  {error ? (
                     <div className="text-center py-10 px-4 bg-red-50 border border-red-200 rounded-lg max-w-2xl mx-auto">
                         <h2 className="text-xl font-semibold text-red-700">¡Ups! Algo salió mal.</h2>
@@ -132,7 +154,7 @@ const AppContent: React.FC = () => {
 
             <BottomNavBar 
                 onComprarClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                onCrearClick={handlePostItemClick}
+                onCrearClick={handleCrearClick}
                 onProfileClick={handleProfileClick}
             />
 
@@ -147,10 +169,29 @@ const AppContent: React.FC = () => {
                     <AuthForm onAuthSuccess={() => setAuthModalOpen(false)} />
                 </Modal>
             )}
+            
+            {isCreateOptionsModalOpen && (
+                <CreateOptionsModal 
+                    onClose={() => setCreateOptionsModalOpen(false)} 
+                    onSelectOption={openPostForm}
+                />
+            )}
 
-            {isPostModalOpen && session && (
-                <Modal title="Publicar un Nuevo Artículo" onClose={() => setPostModalOpen(false)}>
+            {isPostItemModalOpen && session && (
+                <Modal title="Vender un Artículo" onClose={() => setPostItemModalOpen(false)}>
                     <PostItemForm onPostSuccess={handlePostSuccess} />
+                </Modal>
+            )}
+            
+            {isPostJobModalOpen && session && (
+                <Modal title="Publicar un Empleo" onClose={() => setPostJobModalOpen(false)}>
+                    <PostJobForm onPostSuccess={handlePostSuccess} />
+                </Modal>
+            )}
+
+            {isPostRentalModalOpen && session && (
+                <Modal title="Rentar una Propiedad" onClose={() => setPostRentalModalOpen(false)}>
+                    <PostRentalForm onPostSuccess={handlePostSuccess} />
                 </Modal>
             )}
 
@@ -159,7 +200,20 @@ const AppContent: React.FC = () => {
             )}
 
             {isProfileModalOpen && session && (
-                <ProfileModal onClose={() => setProfileModalOpen(false)} />
+                <ProfileModal 
+                    onClose={() => setProfileModalOpen(false)}
+                    onVerifyClick={() => {
+                        setProfileModalOpen(false);
+                        setVerificationModalOpen(true);
+                    }}
+                />
+            )}
+
+            {isVerificationModalOpen && session && (
+                <VerificationModal
+                    onClose={() => setVerificationModalOpen(false)}
+                    onSuccess={handleVerificationSuccess}
+                />
             )}
         </div>
     );
