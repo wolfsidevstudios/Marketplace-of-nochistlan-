@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Item } from '../types';
 import Button from './common/Button';
+import MapModal from './MapModal';
 
 interface ItemDetailProps {
     item: Item;
@@ -9,6 +10,7 @@ interface ItemDetailProps {
 
 const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
     const [activeImageUrl, setActiveImageUrl] = useState<string | undefined>(item.mediaUrls?.[0]?.url);
+    const [isMapModalOpen, setMapModalOpen] = useState(false);
 
     useEffect(() => {
         setActiveImageUrl(item.mediaUrls?.[0]?.url);
@@ -79,7 +81,19 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
                                 <div className="mt-8 pt-6 border-t">
                                     <h3 className="text-lg font-semibold text-gray-800">Información del Vendedor</h3>
                                     <p className="text-gray-600 mt-2 flex items-center"><UserIcon className="w-5 h-5 mr-2 text-gray-500" /> {item.userName}</p>
-                                    <p className="text-gray-600 mt-1 flex items-center"><LocationMarkerIcon className="w-5 h-5 mr-2 text-gray-500" /> {item.userLocation}</p>
+                                    <div className="text-gray-600 mt-1 flex items-center justify-between">
+                                        <span className="flex items-center">
+                                            <LocationMarkerIcon className="w-5 h-5 mr-2 text-gray-500" /> {item.userLocation}
+                                        </span>
+                                        <button
+                                            onClick={() => setMapModalOpen(true)}
+                                            className="text-sm font-medium text-sky-600 hover:text-sky-800 transition-colors flex items-center gap-1"
+                                            aria-label={`Ver ubicación aproximada en el mapa para ${item.userLocation}`}
+                                        >
+                                            <MapIcon className="w-4 h-4" />
+                                            Ver en mapa
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -98,6 +112,12 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
                     </div>
                 </div>
             </div>
+             {isMapModalOpen && (
+                <MapModal
+                    locationName={item.userLocation}
+                    onClose={() => setMapModalOpen(false)}
+                />
+            )}
         </div>
     );
 };
@@ -137,6 +157,12 @@ const LocationMarkerIcon: React.FC<{className: string}> = ({className}) => (
 const CreditCardIcon: React.FC<{className: string}> = ({className}) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+);
+
+const MapIcon: React.FC<{className: string}> = ({className}) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 16.382V5.618a1 1 0 00-1.447-.894L15 7m-6 13l6-3m0 10V7" />
     </svg>
 );
 
