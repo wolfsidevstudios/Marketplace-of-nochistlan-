@@ -2,15 +2,66 @@ import React, { useState, useEffect } from 'react';
 import { Item } from '../types';
 import Button from './common/Button';
 import MapModal from './MapModal';
+import Modal from './common/Modal';
 
 interface ItemDetailProps {
     item: Item;
     onClose: () => void;
 }
 
+const SafetyWarningModal: React.FC<{
+    onConfirm: () => void;
+    onClose: () => void;
+    actionType: 'call' | 'message';
+}> = ({ onConfirm, onClose, actionType }) => {
+    const actionText = actionType === 'call' ? 'Llamar' : 'Enviar Mensaje';
+    
+    return (
+        <Modal title="¡Advertencia de Seguridad!" onClose={onClose}>
+            <div className="text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+                    <svg className="h-6 w-6 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h3 className="mt-4 text-lg leading-6 font-medium text-gray-900">Procede con Precaución</h3>
+                <div className="mt-2 px-4 py-3">
+                    <p className="text-sm text-gray-600">
+                        Antes de contactar o reunirte con el vendedor, por tu seguridad, te recomendamos 
+                        <strong> compartir tu ubicación en tiempo real con amigos o familiares.</strong>
+                    </p>
+                </div>
+                <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row gap-3">
+                    <Button
+                        type="button"
+                        className="w-full"
+                        onClick={() => {
+                            onConfirm();
+                            onClose();
+                        }}
+                    >
+                        Entendido, Continuar para {actionText}
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full"
+                        onClick={onClose}
+                    >
+                        Cancelar
+                    </Button>
+                </div>
+            </div>
+        </Modal>
+    );
+};
+
+
 const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
     const [activeImageUrl, setActiveImageUrl] = useState<string | undefined>(item.mediaUrls?.[0]?.url);
     const [isMapModalOpen, setMapModalOpen] = useState(false);
+    const [isWarningModalOpen, setWarningModalOpen] = useState(false);
+    const [contactAction, setContactAction] = useState<'call' | 'message' | null>(null);
 
     useEffect(() => {
         setActiveImageUrl(item.mediaUrls?.[0]?.url);
@@ -30,6 +81,21 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
         if (item.contactInfo) {
             window.location.href = `sms:${item.contactInfo.replace(/\D/g, '')}`;
         }
+    };
+    
+    const openWarningModal = (action: 'call' | 'message') => {
+        setContactAction(action);
+        setWarningModalOpen(true);
+    };
+
+    const handleConfirmContact = () => {
+        if (contactAction === 'call') {
+            handleCall();
+        } else if (contactAction === 'message') {
+            handleMessage();
+        }
+        setWarningModalOpen(false);
+        setContactAction(null);
     };
 
     return (
@@ -102,10 +168,10 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
                     {/* Action buttons footer for mobile */}
                     <div className="absolute bottom-0 left-0 right-0 md:static md:mt-auto md:pt-8 bg-white/80 backdrop-blur-sm border-t border-gray-200 p-4 md:p-0 md:border-none">
                         <div className="flex flex-col sm:flex-row gap-4">
-                            <Button onClick={handleCall} className="w-full" disabled={!item.contactInfo}>
+                            <Button onClick={() => openWarningModal('call')} className="w-full" disabled={!item.contactInfo}>
                                 <PhoneIcon className="w-5 h-5 mr-2"/> Llamar al Vendedor
                             </Button>
-                            <Button onClick={handleMessage} variant="secondary" className="w-full" disabled={!item.contactInfo}>
+                            <Button onClick={() => openWarningModal('message')} variant="secondary" className="w-full" disabled={!item.contactInfo}>
                                 <MessageIcon className="w-5 h-5 mr-2"/> Enviar Mensaje
                             </Button>
                         </div>
@@ -116,6 +182,13 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
                 <MapModal
                     locationName={item.userLocation}
                     onClose={() => setMapModalOpen(false)}
+                />
+            )}
+            {isWarningModalOpen && contactAction && (
+                <SafetyWarningModal
+                    actionType={contactAction}
+                    onConfirm={handleConfirmContact}
+                    onClose={() => setWarningModalOpen(false)}
                 />
             )}
         </div>

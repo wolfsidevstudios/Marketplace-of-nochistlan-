@@ -11,6 +11,8 @@ import { supabase } from './services/supabaseService';
 import Button from './components/common/Button';
 import EmailConfirmationBanner from './components/EmailConfirmationBanner';
 import WelcomePopup from './components/WelcomePopup';
+import BottomNavBar from './components/BottomNavBar';
+import ProfileModal from './components/ProfileModal';
 
 
 const AppContent: React.FC = () => {
@@ -18,6 +20,7 @@ const AppContent: React.FC = () => {
     const [isAuthModalOpen, setAuthModalOpen] = useState(false);
     const [isPostModalOpen, setPostModalOpen] = useState(false);
     const [isWelcomeModalOpen, setWelcomeModalOpen] = useState(false);
+    const [isProfileModalOpen, setProfileModalOpen] = useState(false);
     const [items, setItems] = useState<Item[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -81,6 +84,8 @@ const AppContent: React.FC = () => {
     const handlePostItemClick = () => {
         if (user?.isConfirmed) {
             setPostModalOpen(true);
+        } else if (!user) {
+            setAuthModalOpen(true);
         }
         // If user is not confirmed, the button in Header will be disabled,
         // so this function won't be called. No extra logic needed here.
@@ -95,6 +100,14 @@ const AppContent: React.FC = () => {
         }, 300); // 300ms debounce
     };
 
+    const handleProfileClick = () => {
+        if (session) {
+            setProfileModalOpen(true);
+        } else {
+            setAuthModalOpen(true);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-white font-sans">
             <Header 
@@ -103,7 +116,7 @@ const AppContent: React.FC = () => {
                 onSearch={handleSearch}
             />
             <EmailConfirmationBanner />
-            <main className="container mx-auto px-4 py-8">
+            <main className="container mx-auto px-4 py-8 pb-24 md:pb-8">
                  {error ? (
                     <div className="text-center py-10 px-4 bg-red-50 border border-red-200 rounded-lg max-w-2xl mx-auto">
                         <h2 className="text-xl font-semibold text-red-700">¡Ups! Algo salió mal.</h2>
@@ -116,6 +129,12 @@ const AppContent: React.FC = () => {
                     <Feed items={items} loading={loading} onItemClick={setSelectedItem} />
                 )}
             </main>
+
+            <BottomNavBar 
+                onComprarClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                onCrearClick={handlePostItemClick}
+                onProfileClick={handleProfileClick}
+            />
 
             {isWelcomeModalOpen && (
                 <Modal title="¡Bienvenido!" onClose={() => setWelcomeModalOpen(false)}>
@@ -137,6 +156,10 @@ const AppContent: React.FC = () => {
 
             {selectedItem && (
                 <ItemDetail item={selectedItem} onClose={() => setSelectedItem(null)} />
+            )}
+
+            {isProfileModalOpen && session && (
+                <ProfileModal onClose={() => setProfileModalOpen(false)} />
             )}
         </div>
     );
