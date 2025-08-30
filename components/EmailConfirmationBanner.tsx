@@ -7,7 +7,8 @@ const EmailConfirmationBanner: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
 
-    if (!session || !user || user.isConfirmed) {
+    // FIX: Check for email confirmation on the session.user object, not the profile.
+    if (!session || !user || session.user.email_confirmed_at) {
         return null;
     }
     

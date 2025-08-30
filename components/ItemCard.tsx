@@ -2,10 +2,12 @@
 import React from 'react';
 import { Post } from '../types';
 import VerifiedBadge from './common/VerifiedBadge';
+import Avatar from './common/Avatar';
 
 interface ItemCardProps {
     item: Post;
     onItemClick: (item: Post) => void;
+    onUserClick: (userId: string) => void;
 }
 
 const CardContent: React.FC<{ item: Post }> = ({ item }) => {
@@ -42,42 +44,67 @@ const CardContent: React.FC<{ item: Post }> = ({ item }) => {
 };
 
 
-const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
+const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick, onUserClick }) => {
+    const userProfile = item.profiles;
+
     return (
         <div 
-            className="bg-white rounded-lg shadow-lg overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-xl cursor-pointer group"
-            onClick={() => onItemClick(item)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onItemClick(item)}
-            aria-label={`Ver detalles de ${item.description || item.jobTitle}`}
+            className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col group"
         >
-            {item.mediaUrls && item.mediaUrls.length > 0 ? (
-                 <img src={item.mediaUrls[0].url} alt={item.description || item.jobTitle} className="w-full h-48 object-cover" />
-            ) : (
-                <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                    <ImageIcon className="w-12 h-12 text-gray-400" />
-                </div>
-            )}
-            <div className="p-4">
-                <CardContent item={item} />
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="flex items-center gap-1.5">
-                        <UserIcon className="w-4 h-4 text-gray-500" />
-                        <p className="text-sm text-gray-500">{item.userName}</p>
-                        {item.userIsVerified && <VerifiedBadge />}
+            <div
+                onClick={() => onItemClick(item)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onItemClick(item)}
+                aria-label={`Ver detalles de ${item.description || item.jobTitle}`}
+                className="cursor-pointer"
+            >
+                {item.mediaUrls && item.mediaUrls.length > 0 ? (
+                     <img src={item.mediaUrls[0].url} alt={item.description || item.jobTitle} className="w-full h-48 object-cover" />
+                ) : (
+                    <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                        <ImageIcon className="w-12 h-12 text-gray-400" />
                     </div>
-                    <p className="text-sm text-gray-500 flex items-center mt-1">
-                        <LocationMarkerIcon className="w-4 h-4 mr-2" />
-                        {item.userLocation}
-                    </p>
-                    {item.postType === 'item' && item.acceptsDigitalPayment && (
-                         <div className="mt-2 inline-flex items-center bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                            <CreditCardIcon className="w-4 h-4 mr-1" />
-                            Acepta Pagos Digitales
-                        </div>
-                    )}
+                )}
+                <div className="p-4">
+                    <CardContent item={item} />
                 </div>
+            </div>
+
+            <div className="mt-auto p-4 pt-4 border-t border-gray-200">
+                {userProfile ? (
+                    <div 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onUserClick(userProfile.id);
+                        }}
+                        className="flex items-center gap-3 cursor-pointer rounded-lg p-2 -m-2 hover:bg-gray-100 transition-colors"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onUserClick(userProfile.id)}
+                        aria-label={`Ver perfil de ${userProfile.name}`}
+                    >
+                        <Avatar src={userProfile.avatar_url} name={userProfile.name} size="md"/>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-1.5">
+                                <p className="text-sm font-semibold text-gray-700">{userProfile.name}</p>
+                                {userProfile.is_verified && <VerifiedBadge />}
+                            </div>
+                            <p className="text-sm text-gray-500 flex items-center">
+                                <LocationMarkerIcon className="w-4 h-4 mr-1" />
+                                {userProfile.location}
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-gray-200"></div>
+                        <div className="flex-1 space-y-1">
+                            <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                            <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -104,25 +131,11 @@ const HomeIcon: React.FC<{className: string}> = ({className}) => (
     </svg>
 );
 
-
-const UserIcon: React.FC<{className: string}> = ({className}) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    </svg>
-);
-
 const LocationMarkerIcon: React.FC<{className: string}> = ({className}) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
 );
-
-const CreditCardIcon: React.FC<{className: string}> = ({className}) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-    </svg>
-);
-
 
 export default ItemCard;

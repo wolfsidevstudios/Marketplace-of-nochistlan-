@@ -5,10 +5,12 @@ import Button from './common/Button';
 import MapModal from './MapModal';
 import Modal from './common/Modal';
 import VerifiedBadge from './common/VerifiedBadge';
+import Avatar from './common/Avatar';
 
 interface ItemDetailProps {
     item: Post;
     onClose: () => void;
+    onNavigateToProfile: (userId: string) => void;
 }
 
 const SafetyWarningModal: React.FC<{
@@ -106,7 +108,7 @@ const DetailContent: React.FC<{ item: Post }> = ({ item }) => {
 }
 
 
-const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
+const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose, onNavigateToProfile }) => {
     const [activeImageUrl, setActiveImageUrl] = useState<string | undefined>(item.mediaUrls?.[0]?.url);
     const [isMapModalOpen, setMapModalOpen] = useState(false);
     const [isWarningModalOpen, setWarningModalOpen] = useState(false);
@@ -149,6 +151,8 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
         setContactAction(null);
     };
 
+    const userProfile = item.profiles;
+
     return (
         <div className="fixed inset-0 bg-white z-50 animate-fade-in" aria-modal="true" role="dialog">
             <div className="container mx-auto px-4 py-8 h-full">
@@ -189,24 +193,37 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
 
                                 <div className="mt-8 pt-6 border-t">
                                     <h3 className="text-lg font-semibold text-gray-800">Información del Publicante</h3>
-                                    <div className="flex items-center gap-2 mt-2">
-                                        <UserIcon className="w-5 h-5 text-gray-500" />
-                                        <p className="text-gray-600">{item.userName}</p>
-                                        {item.userIsVerified && <VerifiedBadge />}
-                                    </div>
-                                    <div className="text-gray-600 mt-1 flex items-center justify-between">
-                                        <span className="flex items-center">
-                                            <LocationMarkerIcon className="w-5 h-5 mr-2 text-gray-500" /> {item.userLocation}
-                                        </span>
-                                        <button
-                                            onClick={() => setMapModalOpen(true)}
-                                            className="text-sm font-medium text-sky-600 hover:text-sky-800 transition-colors flex items-center gap-1"
-                                            aria-label={`Ver ubicación aproximada en el mapa para ${item.userLocation}`}
+                                    {userProfile && (
+                                        <div 
+                                            onClick={() => onNavigateToProfile(userProfile.id)}
+                                            className="mt-2 flex items-center gap-4 cursor-pointer rounded-lg p-2 -m-2 hover:bg-gray-100 transition-colors"
+                                            role="button"
+                                            tabIndex={0}
+                                            aria-label={`Ver perfil de ${userProfile.name}`}
+                                            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onNavigateToProfile(userProfile.id)}
                                         >
-                                            <MapIcon className="w-4 h-4" />
-                                            Ver en mapa
-                                        </button>
-                                    </div>
+                                            <Avatar src={userProfile.avatar_url} name={userProfile.name} size="lg"/>
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <p className="text-gray-800 font-semibold">{userProfile.name}</p>
+                                                    {userProfile.is_verified && <VerifiedBadge />}
+                                                </div>
+                                                <div className="text-gray-600 mt-1 flex items-center justify-between">
+                                                    <span className="flex items-center">
+                                                        <LocationMarkerIcon className="w-5 h-5 mr-2 text-gray-500" /> {userProfile.location}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                     <button
+                                        onClick={() => setMapModalOpen(true)}
+                                        className="mt-2 text-sm font-medium text-sky-600 hover:text-sky-800 transition-colors flex items-center gap-1"
+                                        aria-label={`Ver ubicación aproximada en el mapa para ${userProfile?.location}`}
+                                    >
+                                        <MapIcon className="w-4 h-4" />
+                                        Ver en mapa
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -225,9 +242,9 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
                     </div>
                 </div>
             </div>
-             {isMapModalOpen && (
+             {isMapModalOpen && userProfile && (
                 <MapModal
-                    locationName={item.userLocation}
+                    locationName={userProfile.location}
                     onClose={() => setMapModalOpen(false)}
                 />
             )}
@@ -286,12 +303,6 @@ const PhoneIcon: React.FC<{className: string}> = ({className}) => (
 const MessageIcon: React.FC<{className: string}> = ({className}) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-    </svg>
-);
-
-const UserIcon: React.FC<{className: string}> = ({className}) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
     </svg>
 );
 

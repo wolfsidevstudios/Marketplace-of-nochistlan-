@@ -29,7 +29,7 @@ const fileToGenerativePart = async (file: File) => {
 
 
 const VerificationModal: React.FC<VerificationModalProps> = ({ onClose, onSuccess }) => {
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -97,13 +97,22 @@ const VerificationModal: React.FC<VerificationModalProps> = ({ onClose, onSucces
             }
             
             setStatusMessage('Actualizando perfil...');
-            const { error: updateError } = await supabase.auth.updateUser({
-                data: { isVerified: true }
-            });
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ is_verified: true })
+                .eq('id', user.id);
+
 
             if (updateError) {
                 throw new Error(`Error al actualizar tu perfil: ${updateError.message}`);
             }
+
+            // Also update the auth user metadata for consistency if needed, though profile is primary
+            await supabase.auth.updateUser({
+                data: { isVerified: true }
+            });
+
+            refreshUser(); // Refresh the user profile in the auth context
 
             setStatusMessage('¡Verificación exitosa!');
             setTimeout(() => {

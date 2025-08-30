@@ -7,7 +7,7 @@ import Modal from './components/common/Modal';
 import AuthForm from './components/AuthForm';
 import PostItemForm from './components/PostItemForm';
 import ItemDetail from './components/ItemDetail';
-import { Post, PostType, PostTypeFilter } from './types';
+import { Post, Profile, PostType, PostTypeFilter } from './types';
 import { supabase } from './services/supabaseService';
 import Button from './components/common/Button';
 import EmailConfirmationBanner from './components/EmailConfirmationBanner';
@@ -18,10 +18,14 @@ import CreateOptionsModal from './components/CreateOptionsModal';
 import PostJobForm from './components/PostJobForm';
 import PostRentalForm from './components/PostRentalForm';
 import VerificationModal from './components/VerificationModal';
+import ProfilePage from './pages/ProfilePage';
+import EditProfileModal from './components/EditProfileModal';
 
 
 const AppContent: React.FC = () => {
     const { session, user } = useAuth();
+    const [view, setView] = useState<{page: 'feed' | 'profile', profileId?: string}>({ page: 'feed' });
+
     const [isAuthModalOpen, setAuthModalOpen] = useState(false);
     const [isCreateOptionsModalOpen, setCreateOptionsModalOpen] = useState(false);
     const [isPostItemModalOpen, setPostItemModalOpen] = useState(false);
@@ -30,11 +34,15 @@ const AppContent: React.FC = () => {
     const [isWelcomeModalOpen, setWelcomeModalOpen] = useState(false);
     const [isProfileModalOpen, setProfileModalOpen] = useState(false);
     const [isVerificationModalOpen, setVerificationModalOpen] = useState(false);
-    const [items, setItems] = useState<Post[]>([]);
+    const [isEditProfileModalOpen, setEditProfileModalOpen] = useState(false);
+
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [users, setUsers] = useState<Profile[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedItem, setSelectedItem] = useState<Post | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [searchType, setSearchType] = useState<'posts' | 'users'>('posts');
     const [filter, setFilter] = useState<PostTypeFilter>(null);
 
     useEffect(() => {
@@ -45,60 +53,89 @@ const AppContent: React.FC = () => {
         }
     }, []);
 
-    const fetchItems = async () => {
+    const fetchData = async () => {
         setLoading(true);
         setError(null);
-        
-        let query = supabase
-            .from('items') // The table is still named 'items' in Supabase for now
-            .select('*')
-            .order('createdAt', { ascending: false });
 
-        if (searchTerm) {
-            query = query.or(`description.ilike.%${searchTerm}%,jobTitle.ilike.%${searchTerm}%`);
-        }
+        if (searchType === 'posts') {
+            let query = supabase
+                .from('items')
+                .select('*, profiles(*)')
+                .order('createdAt', { ascending: false });
 
-        if (filter) {
-            query = query.eq('postType', filter);
-        }
-
-        const { data: fetchedItems, error: dbError } = await query;
-
-        if (dbError) {
-            console.error("Error fetching items:", dbError);
-            let errorMessage = "No se pudieron cargar los artículos. Por favor, revisa tu conexión e inténtalo de nuevo.";
-            if (dbError.message.includes('relation "public.items" does not exist')) {
-                errorMessage = "No se encontró la tabla 'items'. Por favor, asegúrate de haber ejecutado las migraciones de la base de datos en tu proyecto de Supabase.";
-            } else if (dbError.message.includes("violates row-level security policy")) {
-                errorMessage = "No se pudieron cargar los artículos debido a políticas de seguridad. Por favor, revisa las políticas de Seguridad a Nivel de Fila (RLS) de Supabase para la tabla 'items' y asegúrate de que el acceso 'SELECT' esté habilitado para usuarios o roles anónimos.";
+            if (searchTerm) {
+                query = query.or(`description.ilike.%${searchTerm}%,jobTitle.ilike.%${searchTerm}%`);
             }
-            setError(errorMessage);
-        } else {
-            setItems(fetchedItems || []);
+
+            if (filter) {
+                query = query.eq('postType', filter);
+            }
+
+            const { data, error: dbError } = await query;
+            if (dbError) {
+                handleFetchError(dbError);
+            } else {
+                setPosts(data as Post[] || []);
+            }
+        } else { // searchType === 'users'
+            let query = supabase
+                .from('profiles')
+                .select('*')
+                .order('name', { ascending: true });
+
+            if (searchTerm) {
+                query = query.ilike('name', `%${searchTerm}%`);
+            }
+            const { data, error: dbError } = await query;
+            if (dbError) {
+                handleFetchError(dbError);
+            } else {
+                setUsers(data || []);
+            }
         }
         setLoading(false);
     };
 
+    const handleFetchError = (dbError: any) => {
+        console.error("Error fetching data:", dbError);
+        let errorMessage = "No se pudieron cargar los datos. Por favor, revisa tu conexión e inténtalo de nuevo.";
+        if (dbError.message.includes('relation "public.items" does not exist') || dbError.message.includes('relation "public.profiles" does not exist')) {
+            errorMessage = "Una tabla requerida no existe. Por favor, asegúrate de haber ejecutado las migraciones de la base de datos en tu proyecto de Supabase.";
+        } else if (dbError.message.includes("violates row-level security policy")) {
+            errorMessage = "No se pudo cargar debido a políticas de seguridad. Por favor, revisa las políticas de Seguridad a Nivel de Fila (RLS) de Supabase.";
+        }
+        setError(errorMessage);
+    }
+
+
     useEffect(() => {
-        fetchItems();
-    }, [searchTerm, filter]);
+        if(view.page === 'feed') {
+            fetchData();
+        }
+    }, [searchTerm, filter, searchType, view]);
+    
+    useEffect(() => {
+        if(view.page === 'feed') {
+            // Reset filters when switching search type
+            setFilter(null);
+        }
+    }, [searchType]);
 
     const handlePostSuccess = (newItem: Post) => {
         setPostItemModalOpen(false);
         setPostJobModalOpen(false);
         setPostRentalModalOpen(false);
-        if (searchTerm || filter) {
-            fetchItems();
-        } else {
-            setItems(prevItems => [newItem, ...prevItems]);
-        }
+        fetchData(); // Refetch all to get latest
     };
     
     const handleCrearClick = () => {
-        if (user?.isConfirmed) {
+        if (user?.is_verified) { // Updated to check new profile property
             setCreateOptionsModalOpen(true);
         } else if (!user) {
             setAuthModalOpen(true);
+        } else {
+             // If user is logged in but not verified, maybe show a message
+            setProfileModalOpen(true); // Or open profile modal to encourage verification
         }
     };
     
@@ -110,8 +147,14 @@ const AppContent: React.FC = () => {
     };
 
     const handleSearch = (query: string) => {
+        setView({ page: 'feed' });
         setSearchTerm(query);
     };
+    
+    const handleNavigateToProfile = (profileId: string) => {
+        setSelectedItem(null); // Close item detail if open
+        setView({ page: 'profile', profileId });
+    }
 
     const handleProfileClick = () => {
         if (session) {
@@ -123,9 +166,40 @@ const AppContent: React.FC = () => {
     
     const handleVerificationSuccess = () => {
         setVerificationModalOpen(false);
-        // The AuthContext will automatically update the user state,
-        // triggering a re-render with the new verified status.
     };
+
+    const renderContent = () => {
+        if (view.page === 'profile' && view.profileId) {
+            return <ProfilePage userId={view.profileId} onBack={() => setView({ page: 'feed'})} onNavigateToProfile={handleNavigateToProfile}/>;
+        }
+
+        return (
+            <>
+                 <h2 className="text-2xl font-bold text-gray-800 mb-6">
+                    {searchType === 'posts' ? 'Publicado Recientemente' : `Resultados para "${searchTerm}"`}
+                 </h2>
+                 {error ? (
+                    <div className="text-center py-10 px-4 bg-red-50 border border-red-200 rounded-lg max-w-2xl mx-auto">
+                        <h2 className="text-xl font-semibold text-red-700">¡Ups! Algo salió mal.</h2>
+                        <p className="mt-2 text-red-600">{error}</p>
+                        <Button onClick={fetchData} className="mt-6">
+                            Intentar de Nuevo
+                        </Button>
+                    </div>
+                ) : (
+                    <Feed 
+                        posts={posts} 
+                        users={users}
+                        loading={loading} 
+                        onItemClick={setSelectedItem} 
+                        searchType={searchType}
+                        onUserClick={(userId) => setView({ page: 'profile', profileId: userId })}
+                    />
+                )}
+            </>
+        );
+    }
+
 
     return (
         <div className="min-h-screen bg-gray-50 font-sans">
@@ -135,25 +209,18 @@ const AppContent: React.FC = () => {
                 onSearch={handleSearch}
                 activeFilter={filter}
                 onFilterChange={setFilter}
+                searchType={searchType}
+                onSearchTypeChange={setSearchType}
+                onProfileClick={handleProfileClick}
+                onLogoClick={() => setView({ page: 'feed' })}
             />
             <EmailConfirmationBanner />
             <main className="container mx-auto px-4 py-8 pb-24 md:pb-8">
-                 <h2 className="text-2xl font-bold text-gray-800 mb-6">Publicado Recientemente</h2>
-                 {error ? (
-                    <div className="text-center py-10 px-4 bg-red-50 border border-red-200 rounded-lg max-w-2xl mx-auto">
-                        <h2 className="text-xl font-semibold text-red-700">¡Ups! Algo salió mal.</h2>
-                        <p className="mt-2 text-red-600">{error}</p>
-                        <Button onClick={fetchItems} className="mt-6">
-                            Intentar de Nuevo
-                        </Button>
-                    </div>
-                ) : (
-                    <Feed items={items} loading={loading} onItemClick={setSelectedItem} />
-                )}
+                 {renderContent()}
             </main>
 
             <BottomNavBar 
-                onComprarClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                onComprarClick={() => setView({ page: 'feed' })}
                 onCrearClick={handleCrearClick}
                 onProfileClick={handleProfileClick}
             />
@@ -196,15 +263,23 @@ const AppContent: React.FC = () => {
             )}
 
             {selectedItem && (
-                <ItemDetail item={selectedItem} onClose={() => setSelectedItem(null)} />
+                <ItemDetail item={selectedItem} onClose={() => setSelectedItem(null)} onNavigateToProfile={handleNavigateToProfile}/>
             )}
 
-            {isProfileModalOpen && session && (
+            {isProfileModalOpen && session && user && (
                 <ProfileModal 
                     onClose={() => setProfileModalOpen(false)}
                     onVerifyClick={() => {
                         setProfileModalOpen(false);
                         setVerificationModalOpen(true);
+                    }}
+                    onEditProfileClick={() => {
+                        setProfileModalOpen(false);
+                        setEditProfileModalOpen(true);
+                    }}
+                    onViewProfileClick={() => {
+                        setProfileModalOpen(false);
+                        handleNavigateToProfile(user.id);
                     }}
                 />
             )}
@@ -213,6 +288,12 @@ const AppContent: React.FC = () => {
                 <VerificationModal
                     onClose={() => setVerificationModalOpen(false)}
                     onSuccess={handleVerificationSuccess}
+                />
+            )}
+            
+            {isEditProfileModalOpen && session && (
+                <EditProfileModal 
+                    onClose={() => setEditProfileModalOpen(false)}
                 />
             )}
         </div>

@@ -1,12 +1,16 @@
 
-export interface User {
-    id: string;
+export interface Profile {
+    id: string; // This is the user ID from auth.users
     name: string;
     location: string;
-    createdAt: string;
-    isConfirmed: boolean;
-    isVerified?: boolean;
+    avatar_url: string | null;
+    banner_url: string | null;
+    is_verified: boolean;
+    created_at: string;
 }
+
+// The user object from useAuth will now be a Profile object
+export type User = Profile;
 
 export interface Session {
     user: User;
@@ -23,10 +27,8 @@ export interface Post {
     contactInfo: string;
     mediaUrls: { url: string; type: 'image' | 'video' }[];
     userId: string;
-    userName: string;
-    userLocation: string;
     createdAt: string;
-    userIsVerified?: boolean;
+    profiles: Profile; // Joined data from the 'profiles' table
 
     // Item-specific
     price?: number;

@@ -5,14 +5,17 @@ import { supabase } from '../services/supabaseService';
 import Button from './common/Button';
 import Modal from './common/Modal';
 import VerifiedBadge from './common/VerifiedBadge';
+import Avatar from './common/Avatar';
 
 interface ProfileModalProps {
     onClose: () => void;
     onVerifyClick: () => void;
+    onEditProfileClick: () => void;
+    onViewProfileClick: () => void;
 }
 
-const ProfileModal: React.FC<ProfileModalProps> = ({ onClose, onVerifyClick }) => {
-    const { user } = useAuth();
+const ProfileModal: React.FC<ProfileModalProps> = ({ onClose, onVerifyClick, onEditProfileClick, onViewProfileClick }) => {
+    const { user, session } = useAuth();
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -23,28 +26,37 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ onClose, onVerifyClick }) =
         return null;
     }
 
+    // Check confirmation status from the session object, as profile doesn't have it.
+    const isConfirmed = !!session?.user?.email_confirmed_at;
+
     return (
         <Modal title="Tu Perfil" onClose={onClose}>
             <div className="flex flex-col items-center text-center">
-                <div className="w-20 h-20 rounded-full bg-sky-100 flex items-center justify-center mb-4">
-                    <span className="text-3xl font-bold text-sky-600">{user.name.charAt(0).toUpperCase()}</span>
-                </div>
+                <Avatar src={user.avatar_url} name={user.name} size="xl" className="mb-4"/>
                 <div className="flex items-center gap-2">
                     <h3 className="text-xl font-bold text-gray-800">{user.name}</h3>
-                    {user.isVerified && <VerifiedBadge />}
+                    {user.is_verified && <VerifiedBadge />}
                 </div>
 
                 <p className="text-gray-500 mb-6">{user.location}</p>
                 
-                {!user.isVerified && user.isConfirmed && (
-                     <Button onClick={onVerifyClick} className="w-full mb-3">
-                        Verificar Identidad
+                <div className="w-full space-y-3">
+                    <Button onClick={onViewProfileClick} className="w-full">
+                        Ver Perfil Público
                     </Button>
-                )}
+                    <Button onClick={onEditProfileClick} variant="secondary" className="w-full">
+                        Editar Perfil
+                    </Button>
+                     {!user.is_verified && isConfirmed && (
+                         <Button onClick={onVerifyClick} className="w-full bg-green-500 hover:bg-green-600 focus:ring-green-500">
+                            Verificar Identidad
+                        </Button>
+                    )}
+                    <Button onClick={handleLogout} variant="secondary" className="w-full border-red-500 text-red-500 hover:bg-red-50">
+                        Cerrar Sesión
+                    </Button>
+                </div>
 
-                <Button onClick={handleLogout} variant="secondary" className="w-full">
-                    Cerrar Sesión
-                </Button>
             </div>
         </Modal>
     );

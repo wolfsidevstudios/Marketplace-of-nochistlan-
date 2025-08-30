@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { supabase } from '../services/supabaseService';
-import { Session, User } from '../types';
+import { User, Profile } from '../types';
 import { Session as SupabaseSession } from '@supabase/supabase-js';
 
 
@@ -9,12 +9,14 @@ interface AuthContextType {
     session: SupabaseSession | null;
     user: User | null;
     loading: boolean;
+    refreshUser: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType>({
     session: null,
     user: null,
     loading: true,
+    refreshUser: () => {},
 });
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -22,23 +24,49 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
+    const fetchProfile = async (userId: string) => {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+        
+        if (error) {
+            console.error("Error fetching profile:", error);
+            setUser(null);
+        } else {
+            setUser(data);
+        }
+        setLoading(false);
+    };
+
+    const refreshUser = () => {
+        if(session?.user) {
+            setLoading(true);
+            fetchProfile(session.user.id);
+        }
+    }
+
     useEffect(() => {
+        setLoading(true);
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+            if (session?.user) {
+                fetchProfile(session.user.id);
+            } else {
+                setLoading(false);
+                setUser(null);
+            }
+        });
+
+
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
             if (session?.user) {
-                const appUser: User = {
-                    id: session.user.id,
-                    createdAt: session.user.created_at,
-                    name: session.user.user_metadata?.name || session.user.email,
-                    location: session.user.user_metadata?.location || '',
-                    isConfirmed: !!session.user.email_confirmed_at,
-                    isVerified: session.user.user_metadata?.isVerified || false,
-                };
-                setUser(appUser);
+                fetchProfile(session.user.id);
             } else {
                 setUser(null);
             }
-            setLoading(false);
         });
 
         return () => {
@@ -50,6 +78,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         session,
         user,
         loading,
+        refreshUser,
     };
 
     return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;

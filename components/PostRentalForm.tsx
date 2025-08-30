@@ -66,18 +66,19 @@ const PostRentalForm: React.FC<PostRentalFormProps> = ({ onPostSuccess }) => {
             contactInfo,
             mediaUrls: uploadedMediaUrls,
             userId: user.id,
-            userName: user.name,
-            userLocation: user.location,
-            userIsVerified: user.isVerified || false,
             createdAt: new Date().toISOString(),
         };
 
-        const { data, error: insertError } = await supabase.from('items').insert([newPostData]).select();
+        const { data, error: insertError } = await supabase
+            .from('items')
+            .insert([newPostData])
+            .select('*, profiles(*)')
+            .single();
 
         if (insertError || !data) {
             setError(insertError?.message || "Error al publicar la propiedad.");
         } else {
-            onPostSuccess(data[0]);
+            onPostSuccess(data as Post);
         }
         setLoading(false);
     };

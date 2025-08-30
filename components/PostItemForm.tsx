@@ -73,21 +73,19 @@ const PostItemForm: React.FC<PostItemFormProps> = ({ onPostSuccess }) => {
             acceptsDigitalPayment,
             mediaUrls: uploadedMediaUrls,
             userId: user.id,
-            userName: user.name,
-            userLocation: user.location,
-            userIsVerified: user.isVerified || false,
             createdAt: new Date().toISOString(),
         };
 
         const { data, error: insertError } = await supabase
             .from('items')
             .insert([newItemData])
-            .select();
+            .select('*, profiles(*)')
+            .single();
 
         if (insertError || !data) {
             setError(insertError?.message || "Error al publicar el artículo.");
         } else {
-            onPostSuccess(data[0]);
+            onPostSuccess(data as Post);
         }
 
         setLoading(false);

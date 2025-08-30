@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabaseService';
 import Button from './common/Button';
 import { PostTypeFilter } from '../types';
+import Avatar from './common/Avatar';
 
 interface HeaderProps {
     onLoginClick: () => void;
@@ -10,9 +12,23 @@ interface HeaderProps {
     onSearch: (query: string) => void;
     activeFilter: PostTypeFilter;
     onFilterChange: (filter: PostTypeFilter) => void;
+    searchType: 'posts' | 'users';
+    onSearchTypeChange: (type: 'posts' | 'users') => void;
+    onProfileClick: () => void;
+    onLogoClick: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onLoginClick, onPostItemClick, onSearch, activeFilter, onFilterChange }) => {
+const Header: React.FC<HeaderProps> = ({ 
+    onLoginClick, 
+    onPostItemClick, 
+    onSearch, 
+    activeFilter, 
+    onFilterChange,
+    searchType,
+    onSearchTypeChange,
+    onProfileClick,
+    onLogoClick,
+}) => {
     const { session, user } = useAuth();
     const [localSearchTerm, setLocalSearchTerm] = useState('');
     
@@ -28,27 +44,21 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onPostItemClick, onSearch
         e.preventDefault();
         onSearch(localSearchTerm);
     };
+    
+    const searchPlaceholder = searchType === 'posts' 
+        ? "Buscar artículos, empleos o rentas..." 
+        : "Buscar usuarios por nombre...";
 
     return (
         <header>
             <nav className="bg-white border-b border-gray-200">
                 <div className="container mx-auto px-4 flex justify-between items-center h-16">
-                    <h1 className="text-xl font-bold text-gray-800 tracking-tight">Marketplace Nochistlán</h1>
+                    <button onClick={onLogoClick} className="text-xl font-bold text-gray-800 tracking-tight">Marketplace Nochistlán</button>
                     <div className="flex items-center space-x-3">
                         {session && user ? (
-                            <>
-                                <Button 
-                                    onClick={onPostItemClick}
-                                    disabled={!user.isConfirmed}
-                                    title={!user.isConfirmed ? "Por favor, confirma tu correo para publicar" : "Publicar algo nuevo"}
-                                    className="hidden sm:flex"
-                                >
-                                    Vender Artículo
-                                </Button>
-                                <Button onClick={handleLogout} variant="secondary">
-                                    Cerrar Sesión
-                                </Button>
-                            </>
+                            <button onClick={onProfileClick} className="rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">
+                               <Avatar src={user.avatar_url} name={user.name} size="md"/>
+                            </button>
                         ) : (
                             <Button onClick={onLoginClick}>
                                 Iniciar Sesión / Registrarse
@@ -73,28 +83,37 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onPostItemClick, onSearch
 
                     <form onSubmit={handleSearchSubmit} className="mt-8 w-full max-w-2xl">
                         <div className="relative flex items-center bg-white rounded-full shadow-lg overflow-hidden group focus-within:ring-2 focus-within:ring-sky-400 focus-within:ring-offset-2 focus-within:ring-offset-transparent transition-shadow">
-                            <span className="pl-5 pr-2" aria-hidden="true">
-                                <SearchIcon className="w-5 h-5 text-gray-500" />
-                            </span>
+                             <select
+                                value={searchType}
+                                onChange={(e) => onSearchTypeChange(e.target.value as 'posts' | 'users')}
+                                className="pl-5 pr-3 py-2 h-14 bg-transparent text-gray-600 font-medium focus:outline-none appearance-none"
+                                aria-label="Tipo de búsqueda"
+                            >
+                                <option value="posts">Publicaciones</option>
+                                <option value="users">Usuarios</option>
+                            </select>
+                             <span className="h-6 w-px bg-gray-200" aria-hidden="true"></span>
                             <input
                                 type="search"
-                                placeholder="Buscar artículos, empleos o rentas..."
+                                placeholder={searchPlaceholder}
                                 value={localSearchTerm}
                                 onChange={handleSearchChange}
-                                className="w-full h-14 pr-4 text-gray-800 placeholder-gray-500 focus:outline-none bg-transparent"
+                                className="w-full h-14 pl-4 pr-4 text-gray-800 placeholder-gray-500 focus:outline-none bg-transparent"
                             />
                             <button type="submit" className="bg-sky-500 hover:bg-sky-600 h-14 px-5 transition-colors" aria-label="Buscar">
-                                <ArrowRightIcon className="w-6 h-6 text-white"/>
+                                <SearchIcon className="w-6 h-6 text-white"/>
                             </button>
                         </div>
                     </form>
 
-                    <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                        <FilterButton label="Todos" isActive={activeFilter === null} onClick={() => onFilterChange(null)} />
-                        <FilterButton label="Artículos" isActive={activeFilter === 'item'} onClick={() => onFilterChange('item')} />
-                        <FilterButton label="Empleos" isActive={activeFilter === 'job'} onClick={() => onFilterChange('job')} />
-                        <FilterButton label="Rentas" isActive={activeFilter === 'rental'} onClick={() => onFilterChange('rental')} />
-                    </div>
+                    {searchType === 'posts' && (
+                        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                            <FilterButton label="Todos" isActive={activeFilter === null} onClick={() => onFilterChange(null)} />
+                            <FilterButton label="Artículos" isActive={activeFilter === 'item'} onClick={() => onFilterChange('item')} />
+                            <FilterButton label="Empleos" isActive={activeFilter === 'job'} onClick={() => onFilterChange('job')} />
+                            <FilterButton label="Rentas" isActive={activeFilter === 'rental'} onClick={() => onFilterChange('rental')} />
+                        </div>
+                    )}
                 </div>
             </div>
         </header>
@@ -125,12 +144,6 @@ const FilterButton: React.FC<FilterButtonProps> = ({ label, isActive, onClick })
 const SearchIcon: React.FC<{className: string}> = ({className}) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-    </svg>
-);
-
-const ArrowRightIcon: React.FC<{className: string}> = ({className}) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
     </svg>
 );
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { supabase } from '../services/supabaseService';
 import Button from './common/Button';
@@ -50,7 +51,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
                 options: {
                     emailRedirectTo: 'https://marketplacepofnochistlan.netlify.app/',
                     data: {
-                        name,
+                        name, // This is temporary, will be moved to profile
                         location,
                     },
                 },
@@ -58,13 +59,33 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
 
             if (signUpError) {
                 setError(signUpError.message);
-            } else {
-                if (data.user && !data.session) {
-                    setRequiresConfirmation(true);
+                setLoading(false);
+                return;
+            } 
+            
+            if (data.user) {
+                // After user is created in auth, create their public profile
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .insert({
+                        id: data.user.id,
+                        name: name,
+                        location: location,
+                        is_verified: false,
+                    });
+
+                if (profileError) {
+                    setError(`Cuenta creada, pero no se pudo crear el perfil: ${profileError.message}`);
                 } else {
-                    onAuthSuccess();
+                    if (!data.session) {
+                        setRequiresConfirmation(true);
+                    } else {
+                        onAuthSuccess();
+                    }
                 }
             }
+
+
         } else {
             const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
             if (signInError) {
